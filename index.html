@@ -485,7 +485,7 @@
             if (currentStep < 7) {
                 const layerIndex = currentStep;
                 await highlightLayer('sender', layerIndex, true);
-                
+
                 if (layerIndex === 0) {
                     addLog("Client: RETR filename.txt", "client");
                     addLog("Server: 150 Opening BINARY mode data connection", "server");
@@ -498,7 +498,7 @@
             else if (currentStep === 7) {
                 // Clear sender highlight
                 document.querySelectorAll('#sender .layer').forEach(l => l.classList.remove('active'));
-                
+
                 infoTitle.textContent = "Transmission / 傳輸中";
                 infoText.innerHTML = "Data is traveling across the network medium as raw bits...<br>數據正以原始位元形式穿越網路媒介...";
                 addLog("Transmitting bits over physical medium... / 透過實體媒介傳輸位元...", "system");
