@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTP in the OSI Model Demonstration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 1px solid #bdc3c7;
+            background-color: #fff;
+            overflow-y: auto;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+            overflow-y: auto;
+            gap: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 1.5em;
+        }
+
+        p.subtitle {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            max-width: 600px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            gap: 30px;
+            flex: 1;
+        }
+
+        .host {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .host-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+
+        .osi-stack {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: white;
+            height: 100%;
+            max-height: 500px;
+        }
+
+        .layer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #ecf0f1;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 0.9em;
+        }
+
+        .layer:last-child {
+            border-bottom: none;
+        }
+
+        .layer.active {
+            background-color: #3498db;
+            color: white;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+            transform: scale(1.02);
+            z-index: 1;
+        }
+
+        .layer-number {
+            position: absolute;
+            left: 10px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #219150;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #resetBtn {
+            background-color: #e74c3c;
+        }
+
+        #resetBtn:hover {
+            background-color: #c0392b;
+        }
+
+        .info-panel {
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+            flex: 1;
+            min-height: 200px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .info-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #2980b9;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+
+        .log-panel {
+            padding: 15px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .log-title {
+            border-bottom: 1px solid #7f8c8d;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .log-entry.client { color: #2ecc71; }
+        .log-entry.server { color: #3498db; }
+        .log-entry.system { color: #95a5a6; font-style: italic; }
+
+        .packet {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #e67e22;
+            border-radius: 50%;
+            display: none;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(230, 126, 34, 0.8);
+            transition: all 0.1s linear;
+        }
+
+        /* Connection line */
+        /* Removed as per request */
+
+        .packet-viz {
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .packet-viz-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e67e22;
+        }
+
+        .packet-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            gap: 2px;
+        }
+
+        .header-block {
+            height: 35px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+            animation: popIn 0.3s forwards;
+        }
+
+        .header-data { background-color: #9b59b6; }
+        .header-tcp { background-color: #3498db; }
+        .header-ip { background-color: #e67e22; }
+        .header-eth { background-color: #2ecc71; }
+        .header-trailer { background-color: #2ecc71; }
+
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        <!-- Left Panel: Visuals -->
+        <div class="left-panel">
+            <h1>FTP & The OSI Model / FTP 與 OSI 模型</h1>
+            <p class="subtitle">A visual demonstration of how File Transfer Protocol operates across the 7 layers of the OSI model during a file transfer.<br>FTP 協議在 OSI 模型七層架構中運作的視覺化演示。</p>
+
+            <div class="container">
+                <div class="host" id="sender">
+                    <div class="host-title">Server (Sender)<br>伺服器 (發送方)</div>
+                    <div class="osi-stack">
+                        <div class="layer" data-layer="7"><span class="layer-number">7</span> Application / 應用層</div>
+                        <div class="layer" data-layer="6"><span class="layer-number">6</span> Presentation / 表現層</div>
+                        <div class="layer" data-layer="5"><span class="layer-number">5</span> Session / 會議層</div>
+                        <div class="layer" data-layer="4"><span class="layer-number">4</span> Transport / 傳輸層</div>
+                        <div class="layer" data-layer="3"><span class="layer-number">3</span> Network / 網路層</div>
+                        <div class="layer" data-layer="2"><span class="layer-number">2</span> Data Link / 資料連結層</div>
+                        <div class="layer" data-layer="1"><span class="layer-number">1</span> Physical / 實體層</div>
+                    </div>
+                </div>
+
+                <!-- Connection line removed -->
+                <div id="packet" class="packet"></div>
+
+                <div class="host" id="receiver">
+                    <div class="host-title">Client (Receiver)<br>客戶端 (接收方)</div>
+                    <div class="osi-stack">
+                        <div class="layer" data-layer="7"><span class="layer-number">7</span> Application / 應用層</div>
+                        <div class="layer" data-layer="6"><span class="layer-number">6</span> Presentation / 表現層</div>
+                        <div class="layer" data-layer="5"><span class="layer-number">5</span> Session / 會議層</div>
+                        <div class="layer" data-layer="4"><span class="layer-number">4</span> Transport / 傳輸層</div>
+                        <div class="layer" data-layer="3"><span class="layer-number">3</span> Network / 網路層</div>
+                        <div class="layer" data-layer="2"><span class="layer-number">2</span> Data Link / 資料連結層</div>
+                        <div class="layer" data-layer="1"><span class="layer-number">1</span> Physical / 實體層</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Controls & Info -->
+        <div class="right-panel">
+            <div class="controls">
+                <button id="nextBtn">Next Step / 下一步</button>
+                <button id="resetBtn" disabled>Reset / 重置</button>
+            </div>
+
+            <div class="packet-viz">
+                <div class="packet-viz-title">Current Packet Structure / 當前封包結構</div>
+                <div class="packet-container" id="packetVizContainer">
+                    <div class="header-block header-data">DATA</div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-title" id="infoTitle">Ready / 準備就緒</div>
+                <div id="infoText">Click "Next Step" to begin the file transfer simulation.<br>點擊「下一步」開始檔案傳輸模擬。</div>
+            </div>
+
+            <div class="log-panel" id="logPanel">
+                <div class="log-title">FTP Session Log / FTP 日誌</div>
+                <div class="log-content" id="logContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const layers = [
+            {
+                name: "Application / 應用層",
+                desc: "FTP Download (RETR). The client requests a file, and the server sends it.<br>FTP 下載 (RETR)。客戶端請求檔案，伺服器進行發送。",
+                details: "The Client has sent 'RETR filename.txt'. The Server's Application layer reads the file and prepares to send it over the data connection.<br>客戶端已發送 'RETR filename.txt'。伺服器的應用層讀取檔案並準備透過數據連線發送。",
+                pdu: "Data / 數據",
+                headers: ["DATA"]
+            },
+            {
+                name: "Presentation / 表現層",
+                desc: "Data formatting, encryption, and compression happen here. For FTP, this might involve ASCII vs Binary translation.<br>數據格式化、加密和壓縮在此進行。對於 FTP，這可能涉及 ASCII 與二進位制的轉換。",
+                details: "The Presentation layer ensures that data is in a usable format. For FTP, this might involve converting EBCDIC to ASCII, or handling encryption if FTPS is used. It prepares the data for the Application layer or the network.<br>表現層確保數據處於可用格式。對於 FTP，這可能涉及將 EBCDIC 轉換為 ASCII，或在使用 FTPS 時處理加密。它為應用層或網路準備數據。",
+                pdu: "Data / 數據",
+                headers: ["DATA"]
+            },
+            {
+                name: "Session / 會議層",
+                desc: "Establishes, manages, and terminates the connections. FTP uses two connections: Control (port 21) and Data (port 20).<br>建立、管理和終止連線。FTP 使用兩個連線：控制連線（埠 21）和數據連線（埠 20）。",
+                details: "The Session layer manages the dialogue between computers. It establishes, maintains, and synchronizes the interaction. In FTP, it handles the control connection (command channel) and opens a separate data connection for the file transfer itself.<br>會議層管理電腦之間的對話。它建立、維護並同步互動。在 FTP 中，它處理控制連線（指令通道）並為檔案傳輸本身開啟單獨的數據連線。",
+                pdu: "Data / 數據",
+                headers: ["DATA"]
+            },
+            {
+                name: "Transport / 傳輸層",
+                desc: "TCP (Transmission Control Protocol) ensures reliable delivery. Data is segmented. Source and Destination ports are added.<br>TCP（傳輸控制協議）確保可靠傳輸。數據被分割。加入來源和目的埠號。",
+                details: "The Transport layer provides reliable or unreliable delivery. FTP uses TCP (reliable). Large data is broken into smaller segments. Source Port (20 for data) and Destination Port (random high port) are added to the header.<br>傳輸層提供可靠或不可靠的傳輸。FTP 使用 TCP（可靠）。大數據被分解為較小的區段。來源埠（數據用 20）和目的埠（隨機高位埠）被加入標頭。",
+                pdu: "Segment / 區段",
+                headers: ["TCP", "DATA"]
+            },
+            {
+                name: "Network / 網路層",
+                desc: "IP (Internet Protocol) handles addressing and routing. Source and Destination IP addresses are added.<br>IP（網際網路協議）處理定址和路由。加入來源和目的 IP 位址。",
+                details: "The Network layer handles logical addressing and routing. The TCP segment is encapsulated into an IP Packet. Source IP (Server) and Destination IP (Client) are added to the header so routers know where to send it.<br>網路層處理邏輯定址和路由。TCP 區段被封裝進 IP 封包。來源 IP（伺服器）和目的 IP（客戶端）被加入標頭，以便路由器知道將其發送至何處。",
+                pdu: "Packet / 封包",
+                headers: ["IP", "TCP", "DATA"]
+            },
+            {
+                name: "Data Link / 資料連結層",
+                desc: "MAC addressing and error detection. Data is encapsulated into frames. Ethernet headers are added.<br>MAC 定址和錯誤檢測。數據被封裝成訊框。加入乙太網路標頭。",
+                details: "The Data Link layer handles physical addressing (MAC addresses). The IP Packet is encapsulated into a Frame. An Ethernet Header (Source/Dest MAC) and a Trailer (FCS for error checking) are added.<br>資料連結層處理實體定址（MAC 位址）。IP 封包被封裝成訊框。加入乙太網路標頭（來源/目的 MAC）和結尾（用於錯誤檢查的 FCS）。",
+                pdu: "Frame / 訊框",
+                headers: ["ETH", "IP", "TCP", "DATA", "TRL"]
+            },
+            {
+                name: "Physical / 實體層",
+                desc: "Transmission of raw bits (0s and 1s) over the physical medium (cable, wifi).<br>透過實體媒介（電纜、Wi-Fi）傳輸原始位元（0 和 1）。",
+                details: "The Physical layer is the actual hardware transmission. The Frame is converted into a stream of bits (electrical signals, light pulses, or radio waves) to be sent across the wire.<br>實體層是實際的硬體傳輸。訊框被轉換為位元流（電子訊號、光脈衝或無線電波）以便透過線路發送。",
+                pdu: "Bits / 位元",
+                headers: ["BITS..."]
+            }
+        ];
+
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const infoTitle = document.getElementById('infoTitle');
+        const infoText = document.getElementById('infoText');
+        const packet = document.getElementById('packet');
+        const logContent = document.getElementById('logContent');
+        const packetVizContainer = document.getElementById('packetVizContainer');
+
+        let currentStep = -1; // -1: Ready, 0-6: Sender, 7: Transmit, 8-14: Receiver
+        const TOTAL_STEPS = 15;
+
+        function updatePacketViz(headers) {
+            packetVizContainer.innerHTML = '';
+            headers.forEach(h => {
+                const div = document.createElement('div');
+                div.className = 'header-block';
+                div.textContent = h;
+
+                if (h === 'DATA') div.classList.add('header-data');
+                else if (h === 'TCP') div.classList.add('header-tcp');
+                else if (h === 'IP') div.classList.add('header-ip');
+                else if (h === 'ETH') div.classList.add('header-eth');
+                else if (h === 'TRL') div.classList.add('header-trailer');
+                else div.style.backgroundColor = '#7f8c8d'; // Default/Bits
+
+                packetVizContainer.appendChild(div);
+            });
+        }
+
+        function addLog(message, type = 'system') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `> ${message}`;
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        async function highlightLayer(side, layerIndex, active) {
+            const host = document.getElementById(side);
+            const domIndex = layerIndex;
+            const layerEl = host.querySelectorAll('.layer')[domIndex];
+
+            // Clear all active layers on this host first to ensure single step focus
+            host.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+
+            if (active) {
+                layerEl.classList.add('active');
+                // Update info
+                const layerInfo = layers[layerIndex];
+                infoTitle.textContent = `${side === 'sender' ? 'Encapsulation' : 'Decapsulation'} - Layer ${7 - layerIndex}: ${layerInfo.name}`;
+                infoText.innerHTML = `<strong>Summary:</strong> ${layerInfo.desc}<br><br><strong>Details:</strong> ${layerInfo.details}<br><br><strong>PDU:</strong> ${layerInfo.pdu}`;
+
+                updatePacketViz(layerInfo.headers);
+            }
+        }
+
+        async function performStep() {
+            currentStep++;
+            resetBtn.disabled = false;
+
+            // SENDER SIDE (Steps 0-6)
+            if (currentStep < 7) {
+                const layerIndex = currentStep;
+                await highlightLayer('sender', layerIndex, true);
+                
+                if (layerIndex === 0) {
+                    addLog("Client: RETR filename.txt", "client");
+                    addLog("Server: 150 Opening BINARY mode data connection", "server");
+                }
+                if (layerIndex === 2) addLog("Session established on port 20 / 於埠 20 建立會話", "system");
+                if (layerIndex === 3) addLog("TCP Segment created (Seq: 100, Ack: 0) / TCP 區段已建立", "system");
+                if (layerIndex === 4) addLog("IP Packet created (Src: 192.168.1.10, Dst: 192.168.1.5) / IP 封包已建立", "system");
+                if (layerIndex === 5) addLog("Frame created (Src MAC: AA:BB..., Dst MAC: DD:EE...) / 訊框已建立", "system");
+            }            // TRANSMISSION (Step 7)
+            else if (currentStep === 7) {
+                // Clear sender highlight
+                document.querySelectorAll('#sender .layer').forEach(l => l.classList.remove('active'));
+                
+                infoTitle.textContent = "Transmission / 傳輸中";
+                infoText.innerHTML = "Data is traveling across the network medium as raw bits...<br>數據正以原始位元形式穿越網路媒介...";
+                addLog("Transmitting bits over physical medium... / 透過實體媒介傳輸位元...", "system");
+                updatePacketViz(["BITS..."]);                // Simple packet animation
+                const senderPhys = document.querySelector('#sender .layer:last-child');
+                const receiverPhys = document.querySelector('#receiver .layer:last-child');
+                const container = document.querySelector('.container');
+
+                const startRect = senderPhys.getBoundingClientRect();
+                const endRect = receiverPhys.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+
+                packet.style.display = 'block';
+                // Calculate position relative to container
+                packet.style.top = (startRect.top - containerRect.top + startRect.height/2 - 10) + 'px';
+                packet.style.left = (startRect.left - containerRect.left + startRect.width/2 - 10) + 'px';
+
+                // Animate across
+                const steps = 50;
+                // Calculate delta relative to container (or just delta between rects, which is same)
+                const dx = (endRect.left - startRect.left) / steps;
+
+                for(let s=0; s<=steps; s++) {
+                    packet.style.left = (parseFloat(packet.style.left) + dx) + 'px';
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                packet.style.display = 'none';
+            }
+
+            // RECEIVER SIDE (Steps 8-14)
+            else if (currentStep < 15) {
+                // Map step 8->6 (Phys), 9->5 (Data Link)... 14->0 (App)
+                const layerIndex = 14 - currentStep;
+                await highlightLayer('receiver', layerIndex, true);
+
+                if (layerIndex === 4) addLog("IP Packet received. Checking destination IP... / 收到 IP 封包。檢查目的 IP...", "system");
+                if (layerIndex === 3) addLog("TCP Segment reassembled. Checking checksum... / TCP 區段重組。檢查校驗和...", "system");
+                if (layerIndex === 0) {
+                    addLog("Client: File received successfully. / 檔案接收成功。", "client");
+                    addLog("Server: 226 Transfer complete. / 傳輸完成。", "server");
+                    nextBtn.textContent = "Finish / 完成";
+                }
+            }
+
+            // FINISH
+            else {
+                infoTitle.textContent = "Complete / 完成";
+                infoText.innerHTML = "File transfer successful! The data has been received and processed by the client's FTP application.<br>檔案傳輸成功！數據已被客戶端的 FTP 應用程式接收並處理。";
+                addLog("Transfer finished successfully. / 傳輸成功完成。", "system");
+                nextBtn.disabled = true;
+            }
+        }
+
+        nextBtn.addEventListener('click', performStep);
+
+        resetBtn.addEventListener('click', () => {
+            currentStep = -1;
+            infoTitle.textContent = "Ready / 準備就緒";
+            infoText.innerHTML = "Click \"Next Step\" to begin the file download simulation.<br>點擊「下一步」開始檔案下載模擬。";
+            logContent.innerHTML = '';
+            nextBtn.disabled = false;
+            nextBtn.textContent = "Next Step / 下一步";
+            resetBtn.disabled = true;
+            updatePacketViz(["DATA"]);
+
+            // Clear any stuck active classes
+            document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+        });
+
+    </script>
+</body>
+</html>
